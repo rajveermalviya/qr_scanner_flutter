@@ -5,7 +5,7 @@ import 'dart:js' as js;
 import 'package:flutter/services.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
-import 'shims/dart_ui.dart' as ui;
+import 'web_shims/dart_ui.dart' as ui;
 
 typedef ScanQrCodeFunction = String? Function(html.ImageData);
 
@@ -46,7 +46,7 @@ class QrScannerFlutterWeb {
 
   Timer? _timer;
 
-  Future<Map<String, int>> _initialize() async {
+  Future<void> _initialize() async {
     _dispose();
 
     if (!js.context.hasProperty('scanQrCode'))
@@ -84,6 +84,7 @@ class QrScannerFlutterWeb {
       ..objectFit = 'cover';
 
     _videoElement!
+      ..controls = false
       ..autoplay = true
       ..muted = true
       ..srcObject = _stream
@@ -99,17 +100,26 @@ class QrScannerFlutterWeb {
       (_) => _divElement!,
     );
 
+    channel.invokeMethod(
+      'cameraInitialized',
+      <String, int>{
+        'texture_id': textureId,
+      },
+    );
+
+    await _videoElement!.onLoadedData.first;
+
+    final videoWidth = _videoElement!.videoWidth;
+    final videoHeight = _videoElement!.videoHeight;
+    final canvas = html.CanvasElement(width: videoWidth, height: videoHeight);
+    canvas.context2D
+      ..translate(videoWidth, 0)
+      ..scale(-1, 1);
+
     _timer = Timer.periodic(
       const Duration(milliseconds: 500),
       (_) {
-        final videoWidth = _videoElement!.videoWidth;
-        final videoHeight = _videoElement!.videoHeight;
-        final canvas =
-            html.CanvasElement(width: videoWidth, height: videoHeight);
-
         canvas.context2D
-          ..translate(videoWidth, 0)
-          ..scale(-1, 1)
           ..drawImageScaled(_videoElement!, 0, 0, videoWidth, videoHeight);
         final image =
             canvas.context2D.getImageData(0, 0, videoWidth, videoHeight);
@@ -120,8 +130,6 @@ class QrScannerFlutterWeb {
         channel.invokeMethod('barcodeDetected', result);
       },
     );
-
-    return {'texture_id': textureId};
   }
 
   void _dispose() {

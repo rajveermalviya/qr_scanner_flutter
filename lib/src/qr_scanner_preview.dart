@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'qr_scanner_controller.dart';
@@ -16,8 +17,15 @@ class QrScannerPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
       valueListenable: controller.cameraInitialized,
-      builder: (context, cameraInitialized, child) => cameraInitialized
-          ? ClipRect(
+      builder: (context, cameraInitialized, child) {
+        if (cameraInitialized) {
+          if (kIsWeb) {
+            return HtmlElementView(
+              viewType:
+                  'qr_scanner_flutter.rajveermalviya.dev/camera/${controller.textureId}',
+            );
+          } else {
+            return ClipRect(
               child: Transform.scale(
                 scale: controller.size.fill(MediaQuery.of(context).size),
                 child: Center(
@@ -27,8 +35,12 @@ class QrScannerPreview extends StatelessWidget {
                   ),
                 ),
               ),
-            )
-          : loaderWidget,
+            );
+          }
+        } else {
+          return loaderWidget;
+        }
+      },
     );
   }
 }

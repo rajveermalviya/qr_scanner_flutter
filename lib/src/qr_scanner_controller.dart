@@ -51,9 +51,9 @@ class QrScannerController {
   Future<void> _cameraInitialized(MethodCall call) async {
     final dataMap = call.arguments as Map<dynamic, dynamic>;
     textureId = dataMap["texture_id"] as int;
-    final width = dataMap["width"] as double;
-    final height = dataMap["height"] as double;
-    size = Size(width, height);
+    final width = dataMap["width"] as double?;
+    final height = dataMap["height"] as double?;
+    if (width != null && height != null) size = Size(width, height);
     cameraInitialized.value = true;
   }
 }
